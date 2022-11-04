@@ -1,0 +1,8 @@
+git
+vcprompt
+bash
+fortune
+cowsay
+ffmpeg
+openjdk
+iperf3
