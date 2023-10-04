@@ -170,27 +170,23 @@ open /System/Applications/App\ Store.app
 ```
 Then
 ```sh
-mas install 634148309 634159523 424389933
+mas install 634148309 634159523 424389933 497799835
 ```
 This Installs:
 - Logic Pro X
 - MainStage 3
 - Final Cut Pro
+- Xcode
 
-### Other Locations
+### Other Programs
 - Waves Central
 - Omnisphere
 - Komplete 11
 - Microsoft Office
-
-## Register Programs:
-
 - Ableton Live 11 (in brew cask - register it)
 - iStatMenu
 - Omnisphere
-
-## Misc
-- Register iStat Menu
+- Register iStat Menu (save on dropbox)
 
 
 ## ohMyZSH
@@ -330,6 +326,16 @@ export PATH="$BUN_INSTALL/bin:$PATH"
 eval "$(/usr/local/bin/brew shellenv)"
 fortune | cowsay -f tux
 source ~/.nvm/nvm.sh
+```
+
+### .p10k.zsh
+Replace:
+```
+typeset -g POWERLEVEL9K_SHORTEN_STRATEGY=truncate_to_unique
+```
+With
+```
+typeset -g POWERLEVEL9K_SHORTEN_STRATEGY=truncate_to_last
 ```
 
 ## Bun
