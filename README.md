@@ -73,18 +73,19 @@ Make it look like this:
 
 ## Brew Formulae
 
-Reference the text file: ```brew-formulae.txt```
-
+```
+xargs brew install < brew-formulae.txt
+```
 This will install:
-
 ```
 git, vcprompt, cowsay, fortune, bash, ffmpeg, openjdk, iperf3, etc.
 ```
 
 ## Brew Casks
 
-Reference the text file: ```brew-casks.txt```
-
+```
+xargs brew cask install < brew-casks.txt
+```
 This will install: 
 
 ```
@@ -95,9 +96,9 @@ alfred, dropbox, docker, google-chrome, rectangle, alt-tab, android-file-transfe
 ## Enable Brew auto upgrades
 
 ```sh
-brew autoupdate start –upgrade –enable-notification
+brew autoupdate start –-upgrade –-cleanup
 ```
-NOTE: [Homebrew Issue #40](https://github.com/Homebrew/homebrew-autoupdate/issues/40#issuecomment-1590072074) - Fix for sudo needed for brew autoupgrade
+NOTE: [Homebrew Issue #40](https://github.com/Homebrew/homebrew-autoupdate/issues/40#issuecomment-1590072074) - Fix for sudo needed for brew autoupgrade - YOU NEED THIS FOR Blackhole-2ch
 
 ## Git Config
 
