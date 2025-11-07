@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+  <dict>
+    <key>Label</key>
+    <string>com.local.openwebui</string>
+    <key>ProgramArguments</key>
+    <array>
+      <string>/Users/jason/.ai-stack/open-webui/venv/bin/open-webui</string>
+      <string>serve</string>
+    </array>
+    <key>EnvironmentVariables</key>
+    <dict>
+      <key>OLLAMA_BASE_URL</key>
+      <string>http://localhost:11434</string>
+      <key>ENABLE_RAG_WEB_SEARCH</key>
+      <string>True</string>
+      <key>RAG_WEB_SEARCH_ENGINE</key>
+      <string>searxng</string>
+      <key>RAG_WEB_SEARCH_RESULT_COUNT</key>
+      <string>3</string>
+      <key>RAG_WEB_SEARCH_CONCURRENT_REQUESTS</key>
+      <string>10</string>
+      <key>SEARXNG_QUERY_URL</key>
+      <string>http://localhost:8080/search?q=&lt;query&gt;</string>
+    </dict>
+    <key>WorkingDirectory</key>
+    <string>/Users/your-username/.ai-stack/open-webui</string>
+    <key>StandardOutPath</key>
+    <string>/Users/your-username/.ai-stack/open-webui/openwebui.log</string>
+    <key>StandardErrorPath</key>
+    <string>/Users/your-username/.ai-stack/open-webui/openwebui_error.log</string>
+    <key>RunAtLoad</key>
+    <true/>
+    <key>KeepAlive</key>
+    <true/>
+  </dict>
+</plist>
+ 

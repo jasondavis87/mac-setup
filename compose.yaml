@@ -1,0 +1,41 @@
+name: ai-stack
+services:
+  # open-webui:
+  #   image: ghcr.io/open-webui/open-webui:latest
+  #   container_name: open-webui
+  #   restart: unless-stopped
+  #   networks:
+  #     - ai-stack
+  #   environment:
+  #     - 'OLLAMA_BASE_URL=http://ollama:11434'
+  #     - ENABLE_RAG_WEB_SEARCH=True
+  #     - RAG_WEB_SEARCH_ENGINE=searxng
+  #     - RAG_WEB_SEARCH_RESULT_COUNT=3
+  #     - RAG_WEB_SEARCH_CONCURRENT_REQUESTS=10
+  #     - SEARXNG_QUERY_URL=http://searxng:8080/search?q=<query>
+  #   volumes:
+  #     - ./open-webui:/app/backend/data
+  #   depends_on:
+  #     - ollama
+  #   extra_hosts:
+  #     - host.docker.internal:host-gateway
+  #   ports:
+  #     - "8080:8080" # Add this line to expose the port
+
+  searxng:
+    image: searxng/searxng:latest
+    container_name: searxng
+    networks:
+      - ai-stack
+    volumes:
+      - ./searxng:/etc/searxng
+    # depends_on:
+    #   - open-webui
+    restart: unless-stopped
+    extra_hosts:
+      - host.docker.internal:host-gateway
+    ports:
+      - "8081:8080"
+networks:
+  ai-stack:
+    external: true

@@ -346,3 +346,84 @@ typeset -g POWERLEVEL9K_SHORTEN_STRATEGY=truncate_to_last
 brew tap oven-sh/bun # for macOS and Linux
 brew install bun
 ```
+
+
+## AI Stack Install
+
+Heavily inspired by (technotim)[https://technotim.live/posts/ai-stack-tutorial/#general-docker-compose-stack]
+
+#### Docker support
+
+Docker does not currently suppoart Apple Silicon GPU Passthrough at the time of this commit, therefore we must run our AI stack natively in python or whatever native language it's in.
+
+
+### 1. Ollama
+
+This was already installed above as as cask, but since brew doesn't allow editing the launchctl files, we'll use our own.
+
+```bash
+brew services stop ollama
+brew services start ollama --file=/path/to/ollama.plist 
+```
+
+### 2. Open Web UI
+
+NOTE: At time of writing, open-webui only supports python 3.11. Also after working on this I discovered i can use ollama for embedings so this could have been in the docker compose.
+
+```bash
+brew install python@3.11
+mkdir ~/.ai-stack/open-webui
+cd ~/.ai-stack/open-webui
+python3.11 -m venv venv
+source venv/bin/activate
+pip3 install --upgrade pip
+pip3 install open-webui
+```
+```bash
+# Add the launchctl's from directory
+launchctl load com.local.openwebui.plist
+launchctl enable gui/$(id -u)/com.local.openwebui
+```
+
+### searxng
+
+Add Docker Network:
+```bash
+docker network create ai-stack
+```
+
+Run docker compose:
+```bash
+docker compose up -d --build --force-recreate --remove-orphans
+```
+
+### comfyui
+
+ComfyUI must run on the gpu so we need to use python again to install.
+Doesnt seem to work with Python 3.13
+
+
+```bash
+## install pytorch
+brew install pytorch rust
+rustup default stable
+
+## install python stack
+mkdir ~/.ai-stack/comfyui
+cd ~/.ai-stack/comfyui
+python3.11 -m venv venv
+source venv/bin/activate
+pip3.11 install --upgrade pip
+pip3.11 install --pre torch torchvision torchaudio --extra-index-url https://download.pytorch.org/whl/nightly/cpu
+
+git clone https://github.com/comfyanonymous/ComfyUI.git
+cd ComfyUI
+pip3.11 install -r requirements.txt
+
+cd custom_nodes
+git clone https://github.com/ltdrdata/ComfyUI-Manager.git
+cd ..
+
+```
+
+Now we need to get checkpoints.
