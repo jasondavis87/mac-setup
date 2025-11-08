@@ -1,0 +1,11 @@
+# Open WebUI config directory
+config/open-webui/
+
+# macOS
+.DS_Store
+
+# IDE
+.vscode/
+.idea/
+
+Brewfile

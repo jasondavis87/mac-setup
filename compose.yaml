@@ -1,41 +1,54 @@
 name: ai-stack
 services:
-  # open-webui:
-  #   image: ghcr.io/open-webui/open-webui:latest
-  #   container_name: open-webui
-  #   restart: unless-stopped
-  #   networks:
-  #     - ai-stack
-  #   environment:
-  #     - 'OLLAMA_BASE_URL=http://ollama:11434'
-  #     - ENABLE_RAG_WEB_SEARCH=True
-  #     - RAG_WEB_SEARCH_ENGINE=searxng
-  #     - RAG_WEB_SEARCH_RESULT_COUNT=3
-  #     - RAG_WEB_SEARCH_CONCURRENT_REQUESTS=10
-  #     - SEARXNG_QUERY_URL=http://searxng:8080/search?q=<query>
-  #   volumes:
-  #     - ./open-webui:/app/backend/data
-  #   depends_on:
-  #     - ollama
-  #   extra_hosts:
-  #     - host.docker.internal:host-gateway
-  #   ports:
-  #     - "8080:8080" # Add this line to expose the port
+  open-webui:
+    image: ghcr.io/open-webui/open-webui:latest
+    container_name: open-webui
+    restart: unless-stopped
+    environment:
+      # Point to host-native Ollama (brew services) from inside the container
+      - OLLAMA_BASE_URL=http://host.docker.internal:11434
+
+      # Enable single user mode (no authentication required)
+      - WEBUI_AUTH=false
+
+      # Enable built-in RAG web search via SearXNG
+      - ENABLE_WEB_SEARCH=True
+      - WEB_SEARCH_RESULT_COUNT=6
+      - WEB_LOADER_CONCURRENT_REQUESTS=10
+      - WEB_SEARCH_ENGINE=searxng
+      # Use JSON format from SearXNG with <query>
+      - SEARXNG_QUERY_URL=http://searxng:8080/search?format=json&q=<query>
+
+    volumes:
+      - ./config/open-webui:/app/backend/data
+    extra_hosts:
+      - host.docker.internal:host-gateway
+    # uncomment to expose to host (using orbstack's proxying feature)
+    # ports:
+    #   - "8080:8080"  # Open WebUI on host http://localhost:8080
+    depends_on:
+      - searxng
 
   searxng:
     image: searxng/searxng:latest
     container_name: searxng
-    networks:
-      - ai-stack
-    volumes:
-      - ./searxng:/etc/searxng
-    # depends_on:
-    #   - open-webui
     restart: unless-stopped
+    volumes:
+      # Mount custom settings.yml into /etc/searxng/settings.yml
+      - ./config/searxng:/etc/searxng
     extra_hosts:
       - host.docker.internal:host-gateway
-    ports:
-      - "8081:8080"
-networks:
-  ai-stack:
-    external: true
+    # uncomment to expose to host
+    # ports:
+    #   - "8081:8080"  # Host access at http://localhost:8081, container name is searxng:8080
+
+  watchtower:
+    image: containrrr/watchtower
+    container_name: watchtower
+    restart: unless-stopped
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    command: --interval 300 --cleanup open-webui searxng
+    depends_on:
+      - open-webui
+      - searxng

@@ -12,17 +12,15 @@ Repo Inspired by: [CodingGarden/mac-setup](https://github.com/CodingGarden/mac-s
 
 ## My Mac
 
-Macbook Pro, 16-inch, 2019<br>
-2.3 GHz 8-Core Intel Core i9<br>
-AMD Radeon Pro 5500M 4 GB<br>
-16 GB 2667 MHz DDR4<br>
-Current OS: Sonoma 14.0
+M4 Max Macbook Pro, 16-inch, 2024<br>
+4 Efficiency, 12 Performance Cores<br>
+128 GB Unified Memory<br>
+Current OS: Tahoe 26.1
 
 ## 3 Screen setup
 Docking Station: [StarTech USB-C 4K Triple Monitor Docking Station](https://www.amazon.com/gp/product/B07LGR8Y14)
 Monitors: 
-- 2x [Sceptre 32 inch QHD IPS Monitor HDR400 2560x1440 DisplayPort up to 144Hz](https://www.amazon.com/dp/B08VTW474P?psc=1&ref=ppx_yo2ov_dt_b_product_details)
-- 1x [Sceptre 27-inch 4K LED Monitor](https://www.amazon.com/gp/product/B073DPBJ7Q/)
+- 3x [Sceptre 32 inch QHD IPS Monitor HDR400 2560x1440 DisplayPort up to 144Hz](https://www.amazon.com/dp/B08VTW474P?psc=1&ref=ppx_yo2ov_dt_b_product_details)
 
 # Table of Contents
 
@@ -56,7 +54,11 @@ xcode-select --install
 
 ### Terminal
 
-iTerm will be installed when doing brew casks
+Right now im trying out Ghostty. Have tried warp & iTerm in the past. iTerm i've retired completely. Warp I like the AI features, but i rarely use them. 
+
+```sh
+brew install --cast ghostty
+```
 
 ### Shell
 
@@ -89,16 +91,72 @@ xargs brew cask install < brew-casks.txt
 This will install: 
 
 ```
-alfred, dropbox, docker, google-chrome, rectangle, alt-tab, android-file-transfer, android-platform-tools, keepingyouawake, discord, slack, istat-menus, vlc, keka, kap, figma, scroll-reverser, time-out, visual-studio-code, zoom, etc.
+dropbox, docker, google-chrome, raycast, rectangle, android-file-transfer, android-platform-tools, keepingyouawake, legcord, istat-menus, vlc, keka, kap, figma, scroll-reverser, time-out, visual-studio-code, zoom, cursor, etc.
 ```
 
+#### App Selection notes:
+- Spotlight Repalcement: I used to use alfred, now I use raycast exclusively.
+- Alt-tab: I used to use alt-tab, but trying without this year. The default ones seems good enough. We'll see.
+- Discord: I've switched to Legcord. No particular reason other than it was suggested.
+- Stats: i tried `stats` for a year and it was OK. I went back to iStatMenus having a license already.
+- Scroll-reverser: I personally scroll my mouse backwards ane use my trackpad normally. So this helps with that. 
+- Cursor is my IDE of choice although i also have VSCode as a backup.
 
 ## Enable Brew auto upgrades
 
+### 1. Create the Launch script
+
 ```sh
-brew autoupdate start –-upgrade –-cleanup
+mkdir -p ~/Library/LaunchAgents
+cat > ~/Library/LaunchAgents/com.user.brew-auto-update.plist <<'XML'
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN"
+ "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+  <dict>
+    <key>Label</key>
+    <string>com.user.brew-auto-update</string>
+
+    <key>ProgramArguments</key>
+    <array>
+      <string>/bin/zsh</string>
+      <string>-lc</string>
+      <string>/opt/homebrew/bin/brew update --quiet && /opt/homebrew/bin/brew upgrade --greedy --quiet && /opt/homebrew/bin/brew cleanup --prune=7 --quiet</string>
+    </array>
+
+    <key>StartCalendarInterval</key>
+    <dict>
+      <key>Hour</key>
+      <integer>3</integer>
+      <key>Minute</key>
+      <integer>0</integer>
+    </dict>
+
+    <key>StandardOutPath</key>
+    <string>/tmp/brew-auto-update.log</string>
+    <key>StandardErrorPath</key>
+    <string>/tmp/brew-auto-update.err</string>
+
+    <key>Nice</key>
+    <integer>10</integer>
+    <key>RunAtLoad</key>
+    <true/>
+  </dict>
+</plist>
+XML
 ```
-NOTE: [Homebrew Issue #40](https://github.com/Homebrew/homebrew-autoupdate/issues/40#issuecomment-1590072074) - Fix for sudo needed for brew autoupgrade - YOU NEED THIS FOR Blackhole-2ch
+
+### 2. Load it
+
+```sh
+launchctl load ~/Library/LaunchAgents/com.user.brew-auto-update.plist
+launchctl start com.user.brew-auto-update
+```
+
+### (Unload it if needed)
+```sh
+launchctl unload ~/Library/LaunchAgents/com.user.brew-auto-update.plist
+```
 
 ## Git Config
 
@@ -107,6 +165,16 @@ git config --global user.email "YOUR_EMAIL"
 git config --global user.name "YOUR NAME"
 git config --global core.editor "nano"
 ```
+
+#### Regenerate SSH Keys and Save
+
+Follow instructions here: [https://docs.github.com/en/authentication/connecting-to-github-with-ssh](https://docs.github.com/en/authentication/connecting-to-github-with-ssh)
+
+
+### Hetzner
+
+Now's a good time to update your hetzner servers with the new ssh key from the Hetzner console.
+Do this from Hetzner.com or the coolify services running on the servers.
 
 ## Finder Settings
 
@@ -131,30 +199,29 @@ git config --global core.editor "nano"
 
 ## Menu Bar Customizations
 
-## Node.js w/ yarn/expo-cli/amplify-cli
+## Node.js w/ yarn/expo-cli
 
-Install Node Version Manager and Yarn/pnpm/expo/amplify for each version
+Install Node Version Manager and Yarn/pnpm/expo for each version
 
 Repo Link: [GitHub](https://github.com/nvm-sh/nvm)
 
 ```sh
-curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.2/install.sh | bash
+curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.3/install.sh | bash
 ```
 
 ```sh
-nvm install 18
-nvm use 18
+nvm install --default 24
+nvm use 24
 npm install -g yarn
 npm install -g pnpm
 npm install -g expo-cli
-npm install -g @aws-amplify/cli
 
-nvm install 20
-nvm use 20
+nvm install 22
+nvm use 22
+npm install -g npm@11.6.2
 npm install -g yarn
 npm install -g pnpm
 npm install -g expo-cli
-npm install -g @aws-amplify/cli
 ```
 
 
@@ -183,9 +250,8 @@ This Installs:
 - Omnisphere
 - Komplete 11
 - Microsoft Office
-- Ableton Live 11 (in brew cask - register it)
+- Ableton Live 12 (in brew cask - register it)
 - iStatMenu
-- Omnisphere
 - Register iStat Menu (save on dropbox)
 
 
@@ -323,9 +389,10 @@ export PATH="$BUN_INSTALL/bin:$PATH"
 
 ### .zprofile
 ```sh
-eval "$(/usr/local/bin/brew shellenv)"
+eval "$(/usr/homebrew/bin/brew shellenv)"
 fortune | cowsay -f tux
 source ~/.nvm/nvm.sh
+source ~/.orbstack/shell/init.zsh 2>/dev/null || :
 ```
 
 ### .p10k.zsh
@@ -348,7 +415,7 @@ brew install bun
 ```
 
 
-## AI Stack Install
+## AI Stack Install (Work in progress)
 
 Heavily inspired by (technotim)[https://technotim.live/posts/ai-stack-tutorial/#general-docker-compose-stack]
 
@@ -359,45 +426,23 @@ Docker does not currently suppoart Apple Silicon GPU Passthrough at the time of 
 
 ### 1. Ollama
 
-This was already installed above as as cask, but since brew doesn't allow editing the launchctl files, we'll use our own.
+This was already installed above as as cask, but since brew doesn't allow editing the launchctl files, we need to use our own. Save `ollama.plist` in `~/.ollama/ollama.plist`.
 
 ```bash
 brew services stop ollama
-brew services start ollama --file=/path/to/ollama.plist 
+brew services start ollama --file=/Users/jason/.ollama/ollama.plist 
 ```
 
-### 2. Open Web UI
+### 2. Open Web UI & SearXNG
 
-NOTE: At time of writing, open-webui only supports python 3.11. Also after working on this I discovered i can use ollama for embedings so this could have been in the docker compose.
-
+Run the docker compose for these
 ```bash
-brew install python@3.11
-mkdir ~/.ai-stack/open-webui
-cd ~/.ai-stack/open-webui
-python3.11 -m venv venv
-source venv/bin/activate
-pip3 install --upgrade pip
-pip3 install open-webui
-```
-```bash
-# Add the launchctl's from directory
-launchctl load com.local.openwebui.plist
-launchctl enable gui/$(id -u)/com.local.openwebui
-```
-
-### searxng
-
-Add Docker Network:
-```bash
-docker network create ai-stack
-```
-
-Run docker compose:
-```bash
-docker compose up -d --build --force-recreate --remove-orphans
+docker compose up -d
 ```
 
 ### comfyui
+
+*** WORK IN PROGRESS *** 
 
 ComfyUI must run on the gpu so we need to use python again to install.
 Doesnt seem to work with Python 3.13
