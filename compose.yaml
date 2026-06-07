@@ -43,7 +43,7 @@ services:
     #   - "8081:8080"  # Host access at http://localhost:8081, container name is searxng:8080
 
   watchtower:
-    image: containrrr/watchtower
+    image: nickfedor/watchtower:latest
     container_name: watchtower
     restart: unless-stopped
     volumes:

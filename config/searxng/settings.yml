@@ -1813,6 +1813,10 @@ engines:
     engine: radio_browser
     shortcut: rb
 
+  # Disabled: Reddit blocks SearXNG's unauth scrape with HTTP 403 (datacenter-IP
+  # bot detection). The engine framework supports cookies, but only by patching
+  # reddit.py; enabling this here just produces empty results + 24h suspensions.
+  # Workaround for now: search via Google/DuckDuckGo with `site:reddit.com <query>`.
   - name: reddit
     engine: reddit
     shortcut: re
@@ -2551,34 +2555,6 @@ engines:
       require_api_key: false
       results: HTML
       language: de
-
-  - name: seekr news
-    engine: seekr
-    shortcut: senews
-    categories: news
-    seekr_category: news
-    disabled: true
-
-  - name: seekr images
-    engine: seekr
-    network: seekr news
-    shortcut: seimg
-    categories: images
-    seekr_category: images
-    disabled: true
-
-  - name: seekr videos
-    engine: seekr
-    network: seekr news
-    shortcut: sevid
-    categories: videos
-    seekr_category: videos
-    disabled: true
-
-  - name: stract
-    engine: stract
-    shortcut: str
-    disabled: true
 
   - name: svgrepo
     engine: svgrepo
