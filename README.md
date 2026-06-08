@@ -433,4 +433,4 @@ docker compose up -d
 
 ## Mac Disk Cleanup
 
-When low on disk space, see [mac-disk-cleanup.md](./mac-disk-cleanup.md). Covers iOS / watchOS simulator runtimes, Xcode DerivedData, Docker, and Homebrew — the full sweep freed ~67 GB last time.
+When low on disk space, see [mac-disk-cleanup.md](./mac-disk-cleanup.md). Covers iOS / watchOS simulator runtimes, Xcode DerivedData, Docker, and Homebrew.

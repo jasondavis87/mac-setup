@@ -1,6 +1,6 @@
 # Mac Disk Cleanup Routine
 
-Run when low on disk space. The full sweep freed ~67 GB the last time I ran it (2026-05-12).
+Run when low on disk space.
 
 ## Before you start
 
@@ -26,8 +26,6 @@ xcrun simctl runtime delete <UUID>
 
 Note: the iOS runtime bundled inside Xcode itself can't be deleted with `simctl` (and you wouldn't want to — it ships with the IDE). Only the separately-downloaded disk images are deletable.
 
-_Last sweep: ~39 GB._
-
 ---
 
 ## 2. watchOS Simulator Runtimes
@@ -35,8 +33,6 @@ _Last sweep: ~39 GB._
 Safe to delete **all** of them — I don't build for watchOS.
 
 Same pattern: `xcrun simctl runtime delete <UUID>` for every watchOS entry from the list above.
-
-_Last sweep: ~7 GB._
 
 ---
 
@@ -55,8 +51,6 @@ Always safe — regenerates on next build.
 ```bash
 rm -rf ~/Library/Developer/Xcode/DerivedData/* && echo "DerivedData cleared"
 ```
-
-_Last sweep: ~21 GB._
 
 ---
 
@@ -82,7 +76,7 @@ brew autoremove     # remove orphaned dependencies
 
 ## Skip — diminishing returns
 
-- **Metal Toolchain.** Only ~11 MB recovered last time, and React Native apps don't pull from Xcode's Metal toolchain. If I ever do want to clean it: Xcode → Settings → Components → trash icon next to old entries. Never `rm -rf` — `mobileassetd` owns that asset DB and CLI removal corrupts it.
+- **Metal Toolchain.** React Native apps don't pull from Xcode's Metal toolchain, and the disk savings are tiny. If I ever do want to clean it: Xcode → Settings → Components → trash icon next to old entries. Never `rm -rf` — `mobileassetd` owns that asset DB and CLI removal corrupts it.
 
 ---
 
