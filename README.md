@@ -26,14 +26,15 @@ Monitors:
 
 - Xcode Command Line Tools
 - Homebrew / Terminal / Shell
-- Brew Formulae
-- Brew Casks
+- Install everything via Brewfile
 - Git Config
 - Finder Settings
 - Menu Bar Customization
 - Node.js
-  - Globals: yarn / expo-cli / amplify-js
+  - Globals: yarn / pnpm / expo-cli
 - Bun
+- AI Stack
+- Mac Disk Cleanup
 
 ## Xcode Command Line Tools
 Install Xcode and run this first so that the system doesnt ask you later
@@ -54,11 +55,9 @@ xcode-select --install
 
 ### Terminal
 
-Right now im trying out Ghostty. Have tried warp & iTerm in the past. iTerm i've retired completely. Warp I like the AI features, but i rarely use them. 
+Currently using cmux (built on Ghostty's lib, but i like it better). Tried Ghostty, Warp, and iTerm in the past. iTerm i've retired completely. Warp I liked the AI features, but i rarely used them.
 
-```sh
-brew install --cast ghostty
-```
+Installed via the `Brewfile` step below — no extra command needed.
 
 ### Shell
 
@@ -73,25 +72,18 @@ Make it look like this:
 
 ![Power Level 10k image](https://github.com/jasondavis87/mac-setup/blob/main/10k.png?raw=true)
 
-## Brew Formulae
+## Install everything via Brewfile
 
-```
-xargs brew install < brew-formulae.txt
-```
-This will install:
-```
-git, vcprompt, cowsay, fortune, bash, ffmpeg, openjdk, iperf3, etc.
+One command installs every formula, cask, Mac App Store app, and VS Code extension listed in `Brewfile`:
+
+```sh
+brew bundle --file=Brewfile
 ```
 
-## Brew Casks
+To regenerate `Brewfile` after manual installs/uninstalls:
 
-```
-xargs brew cask install < brew-casks.txt
-```
-This will install: 
-
-```
-dropbox, docker, google-chrome, raycast, rectangle, android-file-transfer, android-platform-tools, keepingyouawake, legcord, istat-menus, vlc, keka, kap, figma, scroll-reverser, time-out, visual-studio-code, zoom, cursor, etc.
+```sh
+brew bundle dump --force --describe --file=Brewfile
 ```
 
 #### App Selection notes:
@@ -237,13 +229,14 @@ open /System/Applications/App\ Store.app
 ```
 Then
 ```sh
-mas install 634148309 634159523 424389933 497799835
+mas install 634148309 899247664 497799835
 ```
 This Installs:
-- Logic Pro X
-- MainStage 3
-- Final Cut Pro
+- Logic Pro
+- TestFlight
 - Xcode
+
+(These are also in `Brewfile`, so `brew bundle` handles them too once you're signed into the App Store.)
 
 ### Other Programs
 - Waves Central
@@ -375,8 +368,6 @@ source $ZSH/oh-my-zsh.sh
 export NVM_DIR="$HOME/.nvm"
 [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"  # This loads nvm
 [ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"  # This loads nvm bash_completion
-# Added by Amplify CLI binary installer
-export PATH="$HOME/.amplify/bin:$PATH"
 export PATH="/usr/local/opt/openjdk/bin:$PATH"
 
 # bun completions
@@ -389,7 +380,7 @@ export PATH="$BUN_INSTALL/bin:$PATH"
 
 ### .zprofile
 ```sh
-eval "$(/usr/homebrew/bin/brew shellenv)"
+eval "$(/opt/homebrew/bin/brew shellenv)"
 fortune | cowsay -f tux
 source ~/.nvm/nvm.sh
 source ~/.orbstack/shell/init.zsh 2>/dev/null || :
@@ -440,35 +431,6 @@ Run the docker compose for these
 docker compose up -d
 ```
 
-### comfyui
+## Mac Disk Cleanup
 
-*** WORK IN PROGRESS *** 
-
-ComfyUI must run on the gpu so we need to use python again to install.
-Doesnt seem to work with Python 3.13
-
-
-```bash
-## install pytorch
-brew install pytorch rust
-rustup default stable
-
-## install python stack
-mkdir ~/.ai-stack/comfyui
-cd ~/.ai-stack/comfyui
-python3.11 -m venv venv
-source venv/bin/activate
-pip3.11 install --upgrade pip
-pip3.11 install --pre torch torchvision torchaudio --extra-index-url https://download.pytorch.org/whl/nightly/cpu
-
-git clone https://github.com/comfyanonymous/ComfyUI.git
-cd ComfyUI
-pip3.11 install -r requirements.txt
-
-cd custom_nodes
-git clone https://github.com/ltdrdata/ComfyUI-Manager.git
-cd ..
-
-```
-
-Now we need to get checkpoints.
+When low on disk space, see [mac-disk-cleanup.md](./mac-disk-cleanup.md). Covers iOS / watchOS simulator runtimes, Xcode DerivedData, Docker, and Homebrew — the full sweep freed ~67 GB last time.

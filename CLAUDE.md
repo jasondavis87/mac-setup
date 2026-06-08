@@ -8,16 +8,13 @@ A personal macOS bootstrap repo, not a software project. Jason re-runs it on eac
 
 Treat `README.md` as the source of truth for the install order and step-by-step instructions; this file only captures things that aren't obvious from reading it.
 
-## Package manifests — Brewfile vs. .txt lists
+## Package manifest
 
-There are **two parallel ways** packages are tracked, and they have diverged:
+`Brewfile` is the single source of truth for installs. On a fresh macOS install, `brew bundle --file=Brewfile` provisions every formula, cask, Mac App Store app, and VS Code extension at once. The older `brew-formulae.txt` / `brew-casks.txt` lists were deleted (they had drifted from the Brewfile and were a constant source of "which list do I add this to?" confusion).
 
-- `Brewfile` — full `brew bundle` manifest with taps, `brew`, `cask`, `mas`, and `vscode` extension entries, plus per-formula options (e.g. `brew "ollama", restart_service: :changed, link: false`). This is the comprehensive list.
-- `brew-formulae.txt` / `brew-casks.txt` — plain newline-separated lists used by the `xargs brew install < …` commands in the README. These are **smaller subsets** of the Brewfile and intentionally so (e.g. `brew-casks.txt` lists `zen` and `bruno`, which are not in the Brewfile; the Brewfile lists many casks not in `.txt`).
+When adding a package, edit `Brewfile` directly. To regenerate from current install state: `brew bundle dump --force --describe --file=Brewfile` — note this rewrites the whole file alphabetically and replaces any hand-written comments with auto-generated descriptions, so prefer surgical edits over dump when preserving structure matters.
 
-When adding a package, ask which list the user wants it in — they are not auto-synced. Don't "reconcile" them without being asked.
-
-`Brewfile` is listed in `.gitignore` but is committed (the gitignore line predates the commit). Leave it tracked.
+Per-formula option worth preserving on regeneration: `brew "ollama", restart_service: :changed, link: false` — pairs with the custom `ollama.plist` workflow below.
 
 ## AI stack topology (compose.yaml)
 

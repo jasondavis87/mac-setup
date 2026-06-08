@@ -8,4 +8,5 @@ config/open-webui/
 .vscode/
 .idea/
 
-Brewfile
+# Local secrets (not committed)
+.env
