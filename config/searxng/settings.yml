@@ -2525,13 +2525,6 @@ engines:
     disabled: true
     inactive: true
 
-  - name: livespace
-    engine: livespace
-    shortcut: ls
-    categories: videos
-    disabled: true
-    timeout: 5.0
-
   - name: wordnik
     engine: wordnik
     shortcut: wnik
@@ -2554,7 +2547,6 @@ engines:
       use_official_api: false
       require_api_key: false
       results: HTML
-      language: de
 
   - name: svgrepo
     engine: svgrepo
@@ -2600,7 +2592,6 @@ engines:
       use_official_api: false
       require_api_key: false
       results: HTML
-      language: fr
 
   - name: wttr.in
     engine: wttr
