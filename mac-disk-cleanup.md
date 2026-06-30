@@ -54,7 +54,49 @@ rm -rf ~/Library/Developer/Xcode/DerivedData/* && echo "DerivedData cleared"
 
 ---
 
-## 5. Docker
+## 5. iOS DeviceSupport
+
+Per-iOS-version debug symbol caches, created when you connect a real device on that OS version. They regenerate the next time you plug that device in. **Keep the versions matching devices I still use**; delete the old ones (and any duplicates of the same x.y build).
+
+List by size:
+```bash
+du -sh ~/Library/Developer/Xcode/iOS\ DeviceSupport/* | sort -rh
+```
+
+Delete a specific old build (quote the path — it has spaces and parens):
+```bash
+rm -rf ~/Library/Developer/Xcode/iOS\ DeviceSupport/"<iPhone/iPad model> <version> (<build>)"
+```
+
+Glob-delete a whole major version I no longer have a device on:
+```bash
+rm -rf ~/Library/Developer/Xcode/iOS\ DeviceSupport/*17.7*
+```
+
+---
+
+## 6. watchOS DeviceSupport
+
+Same idea, but safe to delete **all** — I don't build for watchOS.
+
+```bash
+rm -rf ~/Library/Developer/Xcode/watchOS\ DeviceSupport/* && echo "watchOS DeviceSupport cleared"
+```
+
+---
+
+## 7. Xcode Archives
+
+Built app archives + dSYMs. **Not** auto-regenerated — there's no rebuilding them from here once gone. Check first, don't blanket-delete: review what's there and only remove archives already submitted/distributed.
+
+```bash
+du -sh ~/Library/Developer/Xcode/Archives/* | sort -rh     # review what's here first
+rm -rf ~/Library/Developer/Xcode/Archives/<archive>        # delete individually once confirmed
+```
+
+---
+
+## 8. Docker
 
 ```bash
 docker system df                       # see what's using space first
@@ -65,18 +107,52 @@ The `-a` flag removes images not currently used by any container (not just dangl
 
 ---
 
-## 6. Homebrew
+## 9. Homebrew
+
+Plain `brew cleanup` only scrubs cached downloads it considers stale, so it barely touches the big `~/Library/Caches/Homebrew/downloads` dir (hundreds of old installer DMGs/bottles). Use `--prune=all` to clear **all** cached downloads regardless of age — this is the single biggest Homebrew win. It's a proper brew command (no `rm` needed) and zero risk: nothing installed is touched, brew just re-downloads on demand if it ever needs a file again.
 
 ```bash
-brew cleanup -s     # remove old versions and scrub the download cache
-brew autoremove     # remove orphaned dependencies
+brew cleanup --prune=all -s     # remove old versions AND wipe the entire download cache
+brew autoremove                 # remove orphaned dependencies
+```
+
+(For a lighter pass that keeps "current" downloads, drop `--prune=all`.)
+
+---
+
+## 10. Gradle caches
+
+Android build cache — regenerates on next build (the following build is slower while it refills).
+
+```bash
+rm -rf ~/.gradle/caches/* && echo "Gradle caches cleared"
 ```
 
 ---
 
-## Skip — diminishing returns
+## 11. Other regenerable caches
+
+All safe to wipe — each app/tool refills on next use.
+
+```bash
+rm -rf ~/Library/Caches/Ableton/*            # Ableton
+rm -rf ~/Library/Caches/org.swift.swiftpm/*  # Swift Package Manager
+rm -rf ~/Library/Caches/ms-playwright/*       # Playwright browsers (re-download on demand)
+```
+
+To find the next round of cache hogs:
+```bash
+du -sh ~/Library/Caches/* | sort -rh | head -15
+```
+
+---
+
+## Skip — leave these alone
 
 - **Metal Toolchain.** React Native apps don't pull from Xcode's Metal toolchain, and the disk savings are tiny. If I ever do want to clean it: Xcode → Settings → Components → trash icon next to old entries. Never `rm -rf` — `mobileassetd` owns that asset DB and CLI removal corrupts it.
+- **CocoaPods cache** (`~/Library/Caches/CocoaPods`). Big, but I build iOS regularly — leave it so pods don't re-fetch constantly.
+- **node_modules in old projects.** I clear these manually with `npx npkill`, and I'm often actively working in some of them. Don't bulk-delete.
+- **Personal data and app data** — large dirs under `~/Library/Application Support`, `~/Music`, `~/.ollama` (local models), etc. Often the biggest items on disk, but not cleanup targets. Ask before touching.
 
 ---
 
