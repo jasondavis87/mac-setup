@@ -130,7 +130,18 @@ rm -rf ~/.gradle/caches/* && echo "Gradle caches cleared"
 
 ---
 
-## 11. Other regenerable caches
+## 11. CocoaPods cache
+
+Downloaded pod sources — regenerates on the next `pod install` (which is slower while it re-fetches). There's a proper CLI for this, so no `rm` needed:
+
+```bash
+du -sh ~/Library/Caches/CocoaPods     # check size first
+pod cache clean --all                 # clears every cached pod
+```
+
+---
+
+## 12. Other regenerable caches
 
 All safe to wipe — each app/tool refills on next use.
 
@@ -150,7 +161,6 @@ du -sh ~/Library/Caches/* | sort -rh | head -15
 ## Skip — leave these alone
 
 - **Metal Toolchain.** React Native apps don't pull from Xcode's Metal toolchain, and the disk savings are tiny. If I ever do want to clean it: Xcode → Settings → Components → trash icon next to old entries. Never `rm -rf` — `mobileassetd` owns that asset DB and CLI removal corrupts it.
-- **CocoaPods cache** (`~/Library/Caches/CocoaPods`). Big, but I build iOS regularly — leave it so pods don't re-fetch constantly.
 - **node_modules in old projects.** I clear these manually with `npx npkill`, and I'm often actively working in some of them. Don't bulk-delete.
 - **Personal data and app data** — large dirs under `~/Library/Application Support`, `~/Music`, `~/.ollama` (local models), etc. Often the biggest items on disk, but not cleanup targets. Ask before touching.
 
