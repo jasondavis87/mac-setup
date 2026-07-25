@@ -29,7 +29,13 @@ brew "jenv"
 brew "libpq"
 brew "mas"
 brew "mingw-w64"
-brew "ollama", restart_service: :changed, link: false
+brew "mint"
+# ollama: formula DISABLED June 2026 — the Apple Silicon bottle for 0.30.x is
+# missing the llama-server runner, so the server starts but every model fails
+# to load (https://github.com/Homebrew/homebrew-core/issues/285917).
+# Installed from the official release tarball instead — see "AI Stack Install
+# > 1. Ollama" in README.md. Once the formula is fixed, restore this line:
+# brew "ollama", restart_service: :changed, link: false
 brew "openjdk@17"
 brew "oxipng"
 brew "pandoc"

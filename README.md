@@ -34,6 +34,7 @@ Monitors:
   - Globals: yarn / pnpm / expo-cli
 - Bun
 - AI Stack
+- Claude MCP Servers (Apple Search Ads, App Store Connect reviews)
 - Mac Disk Cleanup
 
 ## Xcode Command Line Tools
@@ -149,6 +150,89 @@ launchctl start com.user.brew-auto-update
 ```sh
 launchctl unload ~/Library/LaunchAgents/com.user.brew-auto-update.plist
 ```
+
+## Google Play review monitor
+
+Daily check (9am) for new Google Play reviews across all five apps, via a launchd agent. Because Google's Reviews API only returns text reviews from ~the last 7 days, `gplay-review-monitor.sh` permanently archives every review it sees to `~/.gplay/reviews-archive.jsonl` (so nothing is lost once captured) and only flags new/unreplied ones.
+
+Files (repo root): `gplay-reviews.plist` (label `local.gplay-reviews`, no env vars), `gplay-review-monitor.sh` (sets its own PATH so launchd finds `gplay`/`jq`). Data — archive, seen-list, log — lives in `~/.gplay/` and is not tracked.
+
+### Install
+```sh
+cp gplay-reviews.plist ~/Library/LaunchAgents/local.gplay-reviews.plist
+launchctl bootstrap gui/$UID ~/Library/LaunchAgents/local.gplay-reviews.plist
+launchctl kickstart -k gui/$UID/local.gplay-reviews   # optional: run once now
+```
+Reads `~/.gplay/review-monitor.log` for output. Run manually anytime with `./gplay-review-monitor.sh`.
+
+### Update / uninstall
+```sh
+launchctl kickstart -k gui/$UID/local.gplay-reviews            # re-run after editing the script
+launchctl bootout gui/$UID/local.gplay-reviews                 # uninstall
+```
+Requires `gplay` (Homebrew) authenticated via service account at `~/.gplay/keys/`.
+
+## Claude MCP Servers
+
+Two Apple MCP servers are registered **user-scoped** in Claude Code (`-s user`), so Claude can use them across every project for this user. Both are **stdio** servers — Claude spawns them on demand and nothing runs in the background between sessions.
+
+**Key convention:** both Apple `.p8` API keys live under `~/.config/`, one folder per service — `~/.config/apple-search-ads/asa-private.p8` and `~/.config/asc-mcp/asc-private.p8`. These are **never committed** to this repo (see [Keys after a wipe](#verify--keys-after-a-wipe)).
+
+> Full install/build steps live in each project's own README (linked below). This section only captures the `claude mcp add` wiring needed to reconnect them on a fresh machine. Replace every `<PLACEHOLDER>` with your real value — do **not** commit real keys/IDs to this public repo.
+
+### 1. Apple Search Ads — [AppVisionOS/apple-search-ads-mcp](https://github.com/AppVisionOS/apple-search-ads-mcp)
+
+Node MCP for managing Apple Search Ads campaigns, keywords, and reports.
+
+Setup (see project README): clone into `~/.apple-search-ads/`, install deps and build (produces `dist/index.js`); place the ASA private key at `~/.config/apple-search-ads/asa-private.p8`. Then register it user-scoped:
+
+```sh
+claude mcp add apple-search-ads -s user \
+  -e ASA_CLIENT_ID=<ASA_CLIENT_ID> \
+  -e ASA_TEAM_ID=<ASA_TEAM_ID> \
+  -e ASA_KEY_ID=<ASA_KEY_ID> \
+  -e ASA_ORG_ID=<ASA_ORG_ID> \
+  -e ASA_PRIVATE_KEY_PATH=$HOME/.config/apple-search-ads/asa-private.p8 \
+  -- node $HOME/.apple-search-ads/apple-search-ads-mcp/dist/index.js
+```
+
+(IDs come from the Apple Search Ads API setup under Account Settings → API.)
+
+### 2. App Store Connect reviews — [zelentsov-dev/asc-mcp](https://github.com/zelentsov-dev/asc-mcp)
+
+Swift MCP for App Store Connect, used here to **monitor and reply to customer reviews** across all apps. Unlike Google Play, the ASC reviews API returns full history (no 7-day window), so no archiving workaround is needed.
+
+Install via **Mint** (consistent, fixed location under `~/.mint/`):
+
+```sh
+brew install mint                          # also in Brewfile
+mint install zelentsov-dev/asc-mcp@v3.0.2  # builds binary → ~/.mint/bin/asc-mcp
+```
+
+Place the ASC API key at `~/.config/asc-mcp/asc-private.p8`, then register it user-scoped, scoped to the data + apps workers with `--workers reviews,analytics,metrics,apps`:
+
+```sh
+claude mcp add asc-mcp -s user \
+  -e ASC_KEY_ID=<ASC_KEY_ID> \
+  -e ASC_ISSUER_ID=<ASC_ISSUER_ID> \
+  -e ASC_PRIVATE_KEY_PATH=$HOME/.config/asc-mcp/asc-private.p8 \
+  -e ASC_VENDOR_NUMBER=<ASC_VENDOR_NUMBER> \
+  -- $HOME/.mint/bin/asc-mcp --workers reviews,analytics,metrics,apps
+```
+
+Workers: `reviews` = read/reply to customer reviews · `analytics` = App Store analytics (impressions→conversion→downloads funnel by source/territory) + sales/finance reports · `metrics` = per-version performance & diagnostics · `apps` = enumerate apps + their Apple IDs (needed so the other workers can be pointed at an app without looking IDs up elsewhere). Append `--read-only` to block all writes (note: that disables review replies too).
+
+> **Gotcha:** `reviews_list`/`reviews_stats` return a `500` from Apple on unfiltered queries — always pass a `territory`, as **ISO alpha-3** (`USA`, `GBR`), not alpha-2. The `ASC_VENDOR_NUMBER` (App Store Connect → Payments and Financial Reports) is required for sales/finance analytics; the App Analytics funnel path works without it. Create the key in App Store Connect → **Users and Access → Integrations → App Store Connect API** with the **Admin** role — it's the only single role that makes every tool across all three workers function (App Manager covers reviews + App Analytics + metrics but *not* Apple sales/finance reports, and a key's role can't be edited later — only revoked + recreated). The `.p8` grants account-level access; the `--workers` scope is what keeps the agent limited to these three domains.
+
+### Verify & keys after a wipe
+
+```sh
+claude mcp list                       # confirm both show ✔ Connected
+claude mcp get asc-mcp                # inspect command/env for one
+claude mcp remove <name> -s user      # remove one
+```
+
+> **Keys are not in this repo.** After reinstalling, restore each `.p8` from your secure backup (or regenerate it in the relevant Apple portal) to the paths above, then verify it's still valid — Apple keys can be revoked or expire. If `claude mcp list` shows a server failing, a missing/stale key or wrong path is almost always why.
 
 ## Git Config
 
@@ -412,16 +496,43 @@ Heavily inspired by (technotim)[https://technotim.live/posts/ai-stack-tutorial/#
 
 #### Docker support
 
-Docker does not currently suppoart Apple Silicon GPU Passthrough at the time of this commit, therefore we must run our AI stack natively in python or whatever native language it's in.
+Docker does not support Apple Silicon GPU passthrough (re-checked June 2026 — Docker Desktop/OrbStack still can't expose the Metal GPU to a Linux container), therefore we must run Ollama natively and keep only the web UI stack in Docker.
 
 
 ### 1. Ollama
 
-This was already installed above as as cask, but since brew doesn't allow editing the launchctl files, we need to use our own. Save `ollama.plist` in `~/.ollama/ollama.plist`.
+**Try brew first.** As of June 2026 the formula is broken on Apple Silicon — the bottle is missing the `llama-server` runner, so the server starts and answers `/api/version` but every model fails to load with `llama-server binary not found` ([homebrew-core#285917](https://github.com/Homebrew/homebrew-core/issues/285917)). Check whether it's fixed:
 
 ```bash
-brew services stop ollama
-brew services start ollama --file=/Users/jason/.ollama/ollama.plist 
+brew install ollama
+brew services start ollama
+ollama run llama3.1:8b "say hi"   # must actually generate text, not 500
+```
+
+If that generates text, brew is fixed: restore `brew "ollama", restart_service: :changed, link: false` in the Brewfile and skip the fallback below.
+
+**Fallback: official release tarball** (current install). The GitHub release ships the complete runtime including `llama-server`:
+
+```bash
+brew uninstall ollama 2>/dev/null   # don't mix the two installs
+mkdir -p ~/.ollama/runtime
+curl -L -o /tmp/ollama-darwin.tgz https://github.com/ollama/ollama/releases/latest/download/ollama-darwin.tgz
+tar -xzf /tmp/ollama-darwin.tgz -C ~/.ollama/runtime
+ln -sf ~/.ollama/runtime/ollama /opt/homebrew/bin/ollama
+cp ollama.plist ~/Library/LaunchAgents/local.ollama.plist
+launchctl bootstrap gui/$UID ~/Library/LaunchAgents/local.ollama.plist
+```
+
+`ollama.plist` (repo root) sets `OLLAMA_FLASH_ATTENTION=1`, `OLLAMA_KV_CACHE_TYPE=q8_0`, `OLLAMA_KEEP_ALIVE=1h` (how long an idle model stays resident in memory before unloading), and logs to `~/.ollama/ollama.log`.
+
+To update the tarball install: re-download, re-extract, then `launchctl kickstart -k gui/$UID/local.ollama`.
+
+To switch back to brew once fixed:
+
+```bash
+launchctl bootout gui/$UID/local.ollama
+rm ~/Library/LaunchAgents/local.ollama.plist /opt/homebrew/bin/ollama
+rm -rf ~/.ollama/runtime    # models in ~/.ollama/models are untouched
 ```
 
 ### 2. Open Web UI & SearXNG
@@ -430,6 +541,34 @@ Run the docker compose for these
 ```bash
 docker compose up -d
 ```
+
+### 3. Image generation (local, in the Open WebUI chat)
+
+Open WebUI drives image generation through Ollama's OpenAI-compatible
+`/v1/images/generations` endpoint — no ComfyUI / Automatic1111 needed. The
+wiring lives in `compose.yaml` (the `IMAGE_*` / `IMAGES_OPENAI_*` env vars);
+you just need the model on the host:
+
+```bash
+ollama pull x/z-image-turbo      # 12 GB, Alibaba Z-Image-Turbo (fast, photoreal)
+# optional, higher quality / slower:
+# ollama pull x/flux2-klein
+```
+
+Then in Open WebUI, open a chat, send a prompt, and click the image icon on the
+response (or use the Image tab). First image loads the model (~adds a few sec).
+
+**Speed note:** Ollama's MLX image runner is experimental and ~10x slower per
+denoising step than a tuned pipeline, so resolution dominates: ~25s at 512px
+(the compose default) vs ~2 min at 1024px. Bump it in **Admin > Settings >
+Images** when you want final quality. Draw Things / ComfyUI are faster but don't
+drop into the Open WebUI chat as cleanly (Draw Things has no native Open WebUI
+support; ComfyUI needs a separate Python stack) — revisit if Ollama's speed
+becomes a blocker.
+
+Why Z-Image over "Nano Banana": Nano Banana is Google's Gemini image model,
+cloud-only — it can't run locally. Z-Image-Turbo and FLUX.2 Klein are the local
+open-weight equivalents.
 
 ## Mac Disk Cleanup
 

@@ -5,11 +5,30 @@ services:
     container_name: open-webui
     restart: unless-stopped
     environment:
-      # Point to host-native Ollama (brew services) from inside the container
+      # Point to host-native Ollama (launchd agent) from inside the container
       - OLLAMA_BASE_URL=http://host.docker.internal:11434
 
       # Enable single user mode (no authentication required)
       - WEBUI_AUTH=false
+
+      # === Local image generation via host-native Ollama ===
+      # Ollama exposes an OpenAI-compatible /v1/images/generations endpoint, so
+      # Open WebUI's "openai" image engine drives it directly. The API key is a
+      # required-but-ignored dummy (Ollama doesn't auth). Pull the model on the
+      # host first: `ollama pull x/z-image-turbo` (see README AI Stack section).
+      # NOTE: these are PersistentConfig — on an EXISTING install they only seed
+      # if image gen was never configured in the Admin UI; on a fresh DB they
+      # apply on first boot. To force a re-seed, set ENABLE_PERSISTENT_CONFIG=False.
+      - ENABLE_IMAGE_GENERATION=True
+      - IMAGE_GENERATION_ENGINE=openai
+      - IMAGES_OPENAI_API_BASE_URL=http://host.docker.internal:11434/v1
+      - IMAGES_OPENAI_API_KEY=ollama
+      - IMAGE_GENERATION_MODEL=x/z-image-turbo
+      # 512px ~25s; bump to 1024x1024 (~2 min) in Admin > Settings > Images for
+      # final quality. Ollama's MLX image runner is experimental and ~10x slower
+      # per step than a tuned pipeline, so resolution is the main speed lever.
+      - IMAGE_SIZE=512x512
+      - IMAGE_STEPS=9
 
       # Enable built-in RAG web search via SearXNG
       - ENABLE_WEB_SEARCH=True
