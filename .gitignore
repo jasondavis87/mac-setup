@@ -10,3 +10,6 @@ config/open-webui/
 
 # Local secrets (not committed)
 .env
+
+# Claude Code local settings
+.claude/settings.local.json

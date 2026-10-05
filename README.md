@@ -15,7 +15,7 @@ Repo Inspired by: [CodingGarden/mac-setup](https://github.com/CodingGarden/mac-s
 M4 Max Macbook Pro, 16-inch, 2024<br>
 4 Efficiency, 12 Performance Cores<br>
 128 GB Unified Memory<br>
-Current OS: Tahoe 26.1
+Target OS: macOS 27 (last verified against Tahoe 26.6)
 
 ## 3 Screen setup
 Docking Station: [StarTech USB-C 4K Triple Monitor Docking Station](https://www.amazon.com/gp/product/B07LGR8Y14)
@@ -24,18 +24,47 @@ Monitors:
 
 # Table of Contents
 
+- Before you wipe
+- Bootable installer
 - Xcode Command Line Tools
 - Homebrew / Terminal / Shell
 - Install everything via Brewfile
+  - Cursor extensions
+- Claude MCP Servers (Apple Search Ads, App Store Connect, others)
 - Git Config
 - Finder Settings
 - Menu Bar Customization
 - Node.js
-  - Globals: yarn / pnpm / expo-cli
+  - Globals: yarn / pnpm / turbo / task-master-ai
+- ohMyZSH (.zshrc / .zprofile / .zshenv)
 - Bun
+- Rust / Python (uv)
 - AI Stack
-- Claude MCP Servers (Apple Search Ads, App Store Connect reviews)
 - Mac Disk Cleanup
+
+## Before you wipe
+
+Run through this on the old install before erasing anything:
+
+- Export code-signing identities (Apple Development / Distribution certs + private keys) from Keychain Access as `.p12` files, with a password.
+- Export Raycast settings (Raycast Settings > Advanced > Export).
+- Back up dotfiles (`~/.zshrc`, `~/.zprofile`, `~/.zshenv`, `~/.ssh/`, `~/.gitconfig`, `~/.config/`) and every project's `.env*` files. None of these belong in this repo.
+- Back up API key files (`.p8`, service-account `.json`) used by the MCP servers and CLIs below.
+- Check every git repo for unpushed work: uncommitted changes, stashes, and local-only branches.
+- Make sure crypto wallet seed phrases are written down and verified.
+- Collect license keys for paid apps (iStat Menus, audio plugins, Office, Ableton, etc.).
+
+## Bootable installer
+
+Optional, but handy for a true clean install (erase the internal disk first, then install from USB):
+
+```sh
+softwareupdate --list-full-installers
+softwareupdate --fetch-full-installer --full-installer-version <version>
+sudo "/Applications/Install macOS <Name>.app/Contents/Resources/createinstallmedia" --volume /Volumes/<USB_NAME>
+```
+
+`createinstallmedia` erases the target USB drive (16 GB or larger). See Apple's guide: [Create a bootable installer for macOS](https://support.apple.com/en-us/101578).
 
 ## Xcode Command Line Tools
 Install Xcode and run this first so that the system doesnt ask you later
@@ -56,35 +85,36 @@ xcode-select --install
 
 ### Terminal
 
-Currently using cmux (built on Ghostty's lib, but i like it better). Tried Ghostty, Warp, and iTerm in the past. iTerm i've retired completely. Warp I liked the AI features, but i rarely used them.
+Currently using cmux (built on Ghostty's lib, but i like it better). Ghostty is installed too as a fallback. Tried Warp and iTerm in the past. iTerm i've retired completely. Warp I liked the AI features, but i rarely used them.
 
-Installed via the `Brewfile` step below — no extra command needed.
+Installed via the `Brewfile` step below, no extra command needed.
 
 ### Shell
 
 Reference: [Link](https://ohmyz.sh/#install)
 
 ```sh
-sh -c "$(curl -fsSL https://raw.github.com/ohmyzsh/ohmyzsh/master/tools/install.sh)"
+sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)"
 ```
-#### USE POWER LEVEL 10k ####
-[Link](https://github.com/romkatv/powerlevel10k)
-Make it look like this:
 
-![Power Level 10k image](https://github.com/jasondavis87/mac-setup/blob/main/10k.png?raw=true)
+Using the default `robbyrussell` theme now (no Powerlevel10k). See [ohMyZSH](#ohmyzsh) below for what goes in `.zshrc` / `.zprofile` / `.zshenv`.
 
 ## Install everything via Brewfile
 
-One command installs every formula, cask, Mac App Store app, and VS Code extension listed in `Brewfile`:
+One command installs every tap, formula, cask, and Mac App Store app listed in `Brewfile`:
 
 ```sh
 brew bundle --file=Brewfile
 ```
 
-To regenerate `Brewfile` after manual installs/uninstalls:
+Third-party taps carry `trusted: true` because current Homebrew refuses to load untrusted taps.
+
+To see what changed after manual installs/uninstalls, dump to a temp file and diff (dumping straight over `Brewfile` drops the hand-written comments, like the Ollama note):
 
 ```sh
-brew bundle dump --force --describe --file=Brewfile
+brew bundle dump --force --file=/tmp/Brewfile.now
+diff Brewfile /tmp/Brewfile.now
+brew bundle cleanup --file=Brewfile   # dry run: lists installed items not in Brewfile
 ```
 
 #### App Selection notes:
@@ -93,7 +123,39 @@ brew bundle dump --force --describe --file=Brewfile
 - Discord: I've switched to Legcord. No particular reason other than it was suggested.
 - Stats: i tried `stats` for a year and it was OK. I went back to iStatMenus having a license already.
 - Scroll-reverser: I personally scroll my mouse backwards ane use my trackpad normally. So this helps with that. 
-- Cursor is my IDE of choice although i also have VSCode as a backup.
+- Cursor is my IDE of choice although i also have VSCode as a backup (no extensions installed in it).
+- AI tools: Claude desktop, Claude Code (`claude-code@latest`), Codex, Cursor CLI, T3 Code (nightly), plus CodexBar and Claude Usage Tracker in the menu bar.
+- Networking: Tailscale (app cask, ships its own CLI), cloudflared, ngrok, mitmproxy, PingPlotter, WiFiman.
+
+### Cursor extensions
+
+Not in the `Brewfile`: `brew bundle`'s `vscode` entries go to whichever editor CLI it finds first (`code` before `cursor`), so they would land in VS Code. Install them into Cursor directly once Cursor's shell command is on PATH (Cursor > Command Palette > "Install 'cursor' command"):
+
+```sh
+for ext in \
+  aaron-bond.better-comments \
+  anthropic.claude-code \
+  anysphere.remote-containers \
+  anysphere.remote-ssh \
+  bradlc.vscode-tailwindcss \
+  chakrounanas.turbo-console-log \
+  christian-kohler.path-intellisense \
+  dbaeumer.vscode-eslint \
+  denoland.vscode-deno \
+  esbenp.prettier-vscode \
+  expo.vscode-expo-tools \
+  formulahendry.auto-close-tag \
+  formulahendry.auto-rename-tag \
+  github.github-vscode-theme \
+  hamster.task-master-hamster \
+  ibm.output-colorizer \
+  johnpapa.vscode-peacock \
+  pkief.material-icon-theme \
+  redhat.vscode-yaml
+do cursor --install-extension "$ext"; done
+```
+
+Regenerate the list with `cursor --list-extensions`.
 
 ## Enable Brew auto upgrades
 
@@ -114,7 +176,7 @@ cat > ~/Library/LaunchAgents/com.user.brew-auto-update.plist <<'XML'
     <array>
       <string>/bin/zsh</string>
       <string>-lc</string>
-      <string>/opt/homebrew/bin/brew update --quiet && /opt/homebrew/bin/brew upgrade --greedy --quiet && /opt/homebrew/bin/brew cleanup --prune=7 --quiet</string>
+      <string>/opt/homebrew/bin/brew update --quiet &amp;&amp; /opt/homebrew/bin/brew upgrade --greedy --quiet &amp;&amp; /opt/homebrew/bin/brew cleanup --prune=7 --quiet</string>
     </array>
 
     <key>StartCalendarInterval</key>
@@ -137,7 +199,12 @@ cat > ~/Library/LaunchAgents/com.user.brew-auto-update.plist <<'XML'
   </dict>
 </plist>
 XML
+plutil -lint ~/Library/LaunchAgents/com.user.brew-auto-update.plist   # must print OK
 ```
+
+The `&&` has to be written as `&amp;&amp;` inside the plist XML, otherwise the file is invalid and launchd refuses to load it.
+
+Caveat: `--greedy` also upgrades self-updating casks. Casks that install a `.pkg` or otherwise need `sudo` (DisplayLink, the Canon driver, BlackHole, etc.) can't prompt for a password from launchd, so their upgrades fail unattended. Check `/tmp/brew-auto-update.err` now and then and run `brew upgrade --greedy` by hand for those.
 
 ### 2. Load it
 
@@ -174,9 +241,9 @@ Requires `gplay` (Homebrew) authenticated via service account at `~/.gplay/keys/
 
 ## Claude MCP Servers
 
-Two Apple MCP servers are registered **user-scoped** in Claude Code (`-s user`), so Claude can use them across every project for this user. Both are **stdio** servers — Claude spawns them on demand and nothing runs in the background between sessions.
+Two Apple MCP servers are registered **user-scoped** in Claude Code (`-s user`), so Claude can use them across every project for this user. Both are **stdio** servers: Claude spawns them on demand and nothing runs in the background between sessions. Other MCP servers in use are listed in [Other MCP servers](#3-other-mcp-servers).
 
-**Key convention:** both Apple `.p8` API keys live under `~/.config/`, one folder per service — `~/.config/apple-search-ads/asa-private.p8` and `~/.config/asc-mcp/asc-private.p8`. These are **never committed** to this repo (see [Keys after a wipe](#verify--keys-after-a-wipe)).
+**Key locations:** the Apple Search Ads key lives next to its server checkout at `~/.apple-search-ads/asa-private.p8`; the App Store Connect key lives at `~/.config/asc-mcp/asc-private.p8`. These are **never committed** to this repo (see [Keys after a wipe](#verify--keys-after-a-wipe)).
 
 > Full install/build steps live in each project's own README (linked below). This section only captures the `claude mcp add` wiring needed to reconnect them on a fresh machine. Replace every `<PLACEHOLDER>` with your real value — do **not** commit real keys/IDs to this public repo.
 
@@ -184,7 +251,7 @@ Two Apple MCP servers are registered **user-scoped** in Claude Code (`-s user`),
 
 Node MCP for managing Apple Search Ads campaigns, keywords, and reports.
 
-Setup (see project README): clone into `~/.apple-search-ads/`, install deps and build (produces `dist/index.js`); place the ASA private key at `~/.config/apple-search-ads/asa-private.p8`. Then register it user-scoped:
+Setup (see project README): clone into `~/.apple-search-ads/`, install deps and build (produces `dist/index.js`); place the ASA private key at `~/.apple-search-ads/asa-private.p8`. Then register it user-scoped:
 
 ```sh
 claude mcp add apple-search-ads -s user \
@@ -192,7 +259,7 @@ claude mcp add apple-search-ads -s user \
   -e ASA_TEAM_ID=<ASA_TEAM_ID> \
   -e ASA_KEY_ID=<ASA_KEY_ID> \
   -e ASA_ORG_ID=<ASA_ORG_ID> \
-  -e ASA_PRIVATE_KEY_PATH=$HOME/.config/apple-search-ads/asa-private.p8 \
+  -e ASA_PRIVATE_KEY_PATH=$HOME/.apple-search-ads/asa-private.p8 \
   -- node $HOME/.apple-search-ads/apple-search-ads-mcp/dist/index.js
 ```
 
@@ -209,7 +276,7 @@ brew install mint                          # also in Brewfile
 mint install zelentsov-dev/asc-mcp@v3.0.2  # builds binary → ~/.mint/bin/asc-mcp
 ```
 
-Place the ASC API key at `~/.config/asc-mcp/asc-private.p8`, then register it user-scoped, scoped to the data + apps workers with `--workers reviews,analytics,metrics,apps`:
+Place the ASC API key at `~/.config/asc-mcp/asc-private.p8`, then register it user-scoped. It is registered with no extra args, so every worker is enabled:
 
 ```sh
 claude mcp add asc-mcp -s user \
@@ -217,17 +284,36 @@ claude mcp add asc-mcp -s user \
   -e ASC_ISSUER_ID=<ASC_ISSUER_ID> \
   -e ASC_PRIVATE_KEY_PATH=$HOME/.config/asc-mcp/asc-private.p8 \
   -e ASC_VENDOR_NUMBER=<ASC_VENDOR_NUMBER> \
-  -- $HOME/.mint/bin/asc-mcp --workers reviews,analytics,metrics,apps
+  -- $HOME/.mint/bin/asc-mcp
 ```
 
-Workers: `reviews` = read/reply to customer reviews · `analytics` = App Store analytics (impressions→conversion→downloads funnel by source/territory) + sales/finance reports · `metrics` = per-version performance & diagnostics · `apps` = enumerate apps + their Apple IDs (needed so the other workers can be pointed at an app without looking IDs up elsewhere). Append `--read-only` to block all writes (note: that disables review replies too).
+To narrow it, append `--workers <list>` after the binary, e.g. `--workers reviews,analytics,metrics,apps`: `reviews` = read/reply to customer reviews · `analytics` = App Store analytics (impressions→conversion→downloads funnel by source/territory) + sales/finance reports · `metrics` = per-version performance & diagnostics · `apps` = enumerate apps + their Apple IDs. Append `--read-only` to block all writes (note: that disables review replies too).
 
-> **Gotcha:** `reviews_list`/`reviews_stats` return a `500` from Apple on unfiltered queries — always pass a `territory`, as **ISO alpha-3** (`USA`, `GBR`), not alpha-2. The `ASC_VENDOR_NUMBER` (App Store Connect → Payments and Financial Reports) is required for sales/finance analytics; the App Analytics funnel path works without it. Create the key in App Store Connect → **Users and Access → Integrations → App Store Connect API** with the **Admin** role — it's the only single role that makes every tool across all three workers function (App Manager covers reviews + App Analytics + metrics but *not* Apple sales/finance reports, and a key's role can't be edited later — only revoked + recreated). The `.p8` grants account-level access; the `--workers` scope is what keeps the agent limited to these three domains.
+> **Gotcha:** `reviews_list`/`reviews_stats` return a `500` from Apple on unfiltered queries — always pass a `territory`, as **ISO alpha-3** (`USA`, `GBR`), not alpha-2. The `ASC_VENDOR_NUMBER` (App Store Connect → Payments and Financial Reports) is required for sales/finance analytics; the App Analytics funnel path works without it. Create the key in App Store Connect → **Users and Access → Integrations → App Store Connect API** with the **Admin** role — it's the only single role that makes every tool across all three workers function (App Manager covers reviews + App Analytics + metrics but *not* Apple sales/finance reports, and a key's role can't be edited later — only revoked + recreated). The `.p8` grants account-level access; only a `--workers` list would limit which domains the agent can touch.
+
+### 3. Other MCP servers
+
+Also registered user-scoped. No keys or account values here; add them from your own accounts.
+
+- `task-manager-ai`: stdio, `task-master-mcp` from the `task-master-ai` npm global (see Node.js).
+- `play-store`: stdio, `uvx --with "mcp<2" play-store-mcp`, with `GOOGLE_APPLICATION_CREDENTIALS` pointing at a Google Play service-account JSON in `~/.config/play-store-mcp/`.
+- `maestro`: stdio, `maestro mcp` (Maestro CLI from the Brewfile) for mobile UI test flows.
+- `context7`: HTTP, `https://mcp.context7.com/mcp` (library docs).
+- `mobbin`: HTTP, `https://api.mobbin.com/mcp` (UI reference screens).
+- `higgsfield`: HTTP, `https://mcp.higgsfield.ai/mcp` (image/video generation).
+- `astro`: HTTP MCP served by the Astro ASO desktop app on a local port.
+
+```sh
+claude mcp add --transport http context7 -s user https://mcp.context7.com/mcp
+claude mcp add maestro -s user -- maestro mcp
+```
+
+HTTP servers that need auth prompt for it on first use (`/mcp` in an interactive session).
 
 ### Verify & keys after a wipe
 
 ```sh
-claude mcp list                       # confirm both show ✔ Connected
+claude mcp list                       # confirm each shows ✔ Connected
 claude mcp get asc-mcp                # inspect command/env for one
 claude mcp remove <name> -s user      # remove one
 ```
@@ -240,6 +326,15 @@ claude mcp remove <name> -s user      # remove one
 git config --global user.email "YOUR_EMAIL"
 git config --global user.name "YOUR NAME"
 git config --global core.editor "nano"
+git config --global url."git@github.com:".insteadOf "https://github.com/"   # always use SSH for GitHub
+git lfs install                                                           # adds the filter.lfs.* entries
+```
+
+Global ignore file: git reads `~/.config/git/ignore` by default (no `core.excludesFile` needed). It currently holds:
+
+```sh
+mkdir -p ~/.config/git
+echo '**/.claude/settings.local.json' >> ~/.config/git/ignore
 ```
 
 #### Regenerate SSH Keys and Save
@@ -275,9 +370,13 @@ Do this from Hetzner.com or the coolify services running on the servers.
 
 ## Menu Bar Customizations
 
-## Node.js w/ yarn/expo-cli
+- Hidden Bar: collapse rarely used icons behind the arrow.
+- iStat Menus: CPU / GPU / memory / network stats (register the license).
+- CodexBar and Claude Usage Tracker: AI usage limits at a glance.
 
-Install Node Version Manager and Yarn/pnpm/expo for each version
+## Node.js w/ yarn/pnpm
+
+Install Node Version Manager, Node 24 (the only version installed), and the npm globals.
 
 Repo Link: [GitHub](https://github.com/nvm-sh/nvm)
 
@@ -288,17 +387,10 @@ curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.3/install.sh | bash
 ```sh
 nvm install --default 24
 nvm use 24
-npm install -g yarn
-npm install -g pnpm
-npm install -g expo-cli
-
-nvm install 22
-nvm use 22
-npm install -g npm@11.6.2
-npm install -g yarn
-npm install -g pnpm
-npm install -g expo-cli
+npm install -g yarn pnpm turbo task-master-ai @expo/ngrok
 ```
+
+`corepack` and `npm` ship with Node 24. `expo-cli` is deprecated; use `npx expo` per project (and `eas-cli` from Bun below).
 
 
 ## Additional Applications
@@ -313,12 +405,15 @@ open /System/Applications/App\ Store.app
 ```
 Then
 ```sh
-mas install 634148309 899247664 497799835
+mas install 634148309 1088667674 899247664 497799835
 ```
 This Installs:
 - Logic Pro
+- Loops By CDub
 - TestFlight
 - Xcode
+
+Xcode betas come from [developer.apple.com/download](https://developer.apple.com/download/) and sit next to the release build (e.g. `Xcode-<version>.app`).
 
 (These are also in `Brewfile`, so `brew bundle` handles them too once you're signed into the App Store.)
 
@@ -326,169 +421,103 @@ This Installs:
 - Waves Central
 - Omnisphere
 - Komplete 11
-- Microsoft Office
-- Ableton Live 12 (in brew cask - register it)
+- Microsoft Office (cask `microsoft-office`, commented out in `Brewfile`)
+- Ableton Live 12 Suite (cask `ableton-live-suite`, commented out in `Brewfile`; register it)
+- Wispr Flow and FluidVoice (dictation; casks `wispr-flow` / `fluidvoice`, commented out in `Brewfile`)
 - iStatMenu
 - Register iStat Menu (save on dropbox)
 
 
 ## ohMyZSH
 
+Theme is the stock `robbyrussell`; plugins are `git node vscode`. Keep the oh-my-zsh installer's template and add the blocks below. Three files, each with one job:
+
+- `~/.zprofile`: login-shell setup (nvm, OrbStack).
+- `~/.zshrc`: interactive shell (oh-my-zsh, toolchain PATHs, aliases).
+- `~/.zshenv`: sourced by every zsh, including non-interactive ones. Cargo env plus any personal tokens or env vars live here, kept out of this repo.
+
+Homebrew's installer adds `/opt/homebrew/bin` via `/etc/paths.d/homebrew`. If `brew` isn't found in a new shell, add `eval "$(/opt/homebrew/bin/brew shellenv)"` to the top of `~/.zprofile`.
+
 ### .zshrc
 
+Additions after the oh-my-zsh template:
+
 ```sh
-# Enable Powerlevel10k instant prompt. Should stay close to the top of ~/.zshrc.
-# Initialization code that may require console input (password prompts, [y/n]
-# confirmations, etc.) must go above this block; everything else may go below.
-if [[ -r "${XDG_CACHE_HOME:-$HOME/.cache}/p10k-instant-prompt-${(%):-%n}.zsh" ]]; then
-  source "${XDG_CACHE_HOME:-$HOME/.cache}/p10k-instant-prompt-${(%):-%n}.zsh"
-fi
-
-# If you come from bash you might have to change your $PATH.
-# export PATH=$HOME/bin:/usr/local/bin:$PATH
-
-# Path to your oh-my-zsh installation.
 export ZSH="$HOME/.oh-my-zsh"
-
-# Set name of the theme to load --- if set to "random", it will
-# load a random theme each time oh-my-zsh is loaded, in which case,
-# to know which specific one was loaded, run: echo $RANDOM_THEME
-# See https://github.com/ohmyzsh/ohmyzsh/wiki/Themes
-ZSH_THEME="powerlevel10k/powerlevel10k"
-
-# Set list of themes to pick from when loading at random
-# Setting this variable when ZSH_THEME=random will cause zsh to load
-# a theme from this variable instead of looking in $ZSH/themes/
-# If set to an empty array, this variable will have no effect.
-# ZSH_THEME_RANDOM_CANDIDATES=( "robbyrussell" "agnoster" )
-
-# Uncomment the following line to use case-sensitive completion.
-# CASE_SENSITIVE="true"
-
-# Uncomment the following line to use hyphen-insensitive completion.
-# Case-sensitive completion must be off. _ and - will be interchangeable.
-# HYPHEN_INSENSITIVE="true"
-
-# Uncomment one of the following lines to change the auto-update behavior
-# zstyle ':omz:update' mode disabled  # disable automatic updates
-# zstyle ':omz:update' mode auto      # update automatically without asking
-# zstyle ':omz:update' mode reminder  # just remind me to update when it's time
-
-# Uncomment the following line to change how often to auto-update (in days).
-# zstyle ':omz:update' frequency 13
-
-# Uncomment the following line if pasting URLs and other text is messed up.
-# DISABLE_MAGIC_FUNCTIONS="true"
-
-# Uncomment the following line to disable colors in ls.
-# DISABLE_LS_COLORS="true"
-
-# Uncomment the following line to disable auto-setting terminal title.
-# DISABLE_AUTO_TITLE="true"
-
-# Uncomment the following line to enable command auto-correction.
-# ENABLE_CORRECTION="true"
-
-# Uncomment the following line to display red dots whilst waiting for completion.
-# You can also set it to another string to have that shown instead of the default red dots.
-# e.g. COMPLETION_WAITING_DOTS="%F{yellow}waiting...%f"
-# Caution: this setting can cause issues with multiline prompts in zsh < 5.7.1 (see #5765)
-# COMPLETION_WAITING_DOTS="true"
-
-# Uncomment the following line if you want to disable marking untracked files
-# under VCS as dirty. This makes repository status check for large repositories
-# much, much faster.
-# DISABLE_UNTRACKED_FILES_DIRTY="true"
-
-# Uncomment the following line if you want to change the command execution time
-# stamp shown in the history command output.
-# You can set one of the optional three formats:
-# "mm/dd/yyyy"|"dd.mm.yyyy"|"yyyy-mm-dd"
-# or set a custom format using the strftime function format specifications,
-# see 'man strftime' for details.
-# HIST_STAMPS="mm/dd/yyyy"
-
-# Would you like to use another custom folder than $ZSH/custom?
-# ZSH_CUSTOM=/path/to/new-custom-folder
-
-# Which plugins would you like to load?
-# Standard plugins can be found in $ZSH/plugins/
-# Custom plugins may be added to $ZSH_CUSTOM/plugins/
-# Example format: plugins=(rails git textmate ruby lighthouse)
-# Add wisely, as too many plugins slow down shell startup.
+ZSH_THEME="robbyrussell"
 plugins=(git node vscode)
-
 source $ZSH/oh-my-zsh.sh
 
-# User configuration
-
-# export MANPATH="/usr/local/man:$MANPATH"
-
-# You may need to manually set your language environment
-# export LANG=en_US.UTF-8
-
-# Preferred editor for local and remote sessions
-# if [[ -n $SSH_CONNECTION ]]; then
-#   export EDITOR='vim'
-# else
-#   export EDITOR='mvim'
-# fi
-
-# Compilation flags
-# export ARCHFLAGS="-arch x86_64"
-
-# Set personal aliases, overriding those provided by oh-my-zsh libs,
-# plugins, and themes. Aliases can be placed here, though oh-my-zsh
-# users are encouraged to define aliases within the ZSH_CUSTOM folder.
-# For a full list of active aliases, run `alias`.
-#
-# Example aliases
-# alias zshconfig="mate ~/.zshrc"
-# alias ohmyzsh="mate ~/.oh-my-zsh"
-
-# To customize prompt, run `p10k configure` or edit ~/.p10k.zsh.
-[[ ! -f ~/.p10k.zsh ]] || source ~/.p10k.zsh
-
+# nvm
 export NVM_DIR="$HOME/.nvm"
-[ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"  # This loads nvm
-[ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"  # This loads nvm bash_completion
-export PATH="/usr/local/opt/openjdk/bin:$PATH"
-
-# bun completions
-[ -s "$HOME/.bun/_bun" ] && source "$HOME/.bun/_bun"
+[ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
+[ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"
 
 # bun
+[ -s "$HOME/.bun/_bun" ] && source "$HOME/.bun/_bun"
 export BUN_INSTALL="$HOME/.bun"
 export PATH="$BUN_INSTALL/bin:$PATH"
+
+# Java (openjdk@17 from Brewfile, for Android/React Native builds)
+export JAVA_HOME="/opt/homebrew/opt/openjdk@17/libexec/openjdk.jdk/Contents/Home"
+export PATH="$JAVA_HOME/bin:$PATH"
+
+# Android SDK (installed by Android Studio)
+export ANDROID_SDK_ROOT="$HOME/Library/Android/sdk"
+export ANDROID_HOME="$ANDROID_SDK_ROOT"
+export PATH="$ANDROID_SDK_ROOT/platform-tools:$ANDROID_SDK_ROOT/emulator:$ANDROID_SDK_ROOT/cmdline-tools/latest/bin:$PATH"
+
+# task-master shortcuts
+alias tm='task-master'
+alias taskmaster='task-master'
+
+# uv (adds ~/.local/bin to PATH; created by the uv installer)
+. "$HOME/.local/bin/env"
+
+# ffmpeg-full is keg-only; put its bin first
+export PATH="/opt/homebrew/opt/ffmpeg-full/bin:$PATH"
 ```
 
 ### .zprofile
 ```sh
-eval "$(/opt/homebrew/bin/brew shellenv)"
-fortune | cowsay -f tux
 source ~/.nvm/nvm.sh
-source ~/.orbstack/shell/init.zsh 2>/dev/null || :
+source ~/.orbstack/shell/init.zsh 2>/dev/null || :   # added by OrbStack
+#fortune | cowsay -f tux
 ```
 
-### .p10k.zsh
-Replace:
-```
-typeset -g POWERLEVEL9K_SHORTEN_STRATEGY=truncate_to_unique
-```
-With
-```
-typeset -g POWERLEVEL9K_SHORTEN_STRATEGY=truncate_to_last
+### .zshenv
+```sh
+. "$HOME/.cargo/env"   # rustup / cargo PATH
+# export any personal tokens and env vars here (kept out of this repo)
 ```
 
 ## Bun
 
 ### Bun Install
 
+`bun` comes from the `oven-sh/bun` tap in the `Brewfile`. Global CLIs:
+
 ```sh
-brew tap oven-sh/bun # for macOS and Linux
-brew install bun
+bun add -g eas-cli wrangler clerk zapier-platform-cli
+bun add -g --trust @higgsfield/cli   # needs its postinstall script
 ```
 
+## Rust / Python (uv)
+
+Rust: `rustup` comes from the `Brewfile` (the `rust` formula is intentionally not installed, it conflicts with rustup-managed toolchains).
+
+```sh
+rustup default stable
+cargo install tauri-cli
+```
+
+If `~/.cargo/env` doesn't exist afterwards, use `export PATH="$HOME/.cargo/bin:$PATH"` in `~/.zshenv` instead.
+
+Python: [uv](https://docs.astral.sh/uv/) via its standalone installer (creates `~/.local/bin/env`, sourced in `.zshrc`). `uvx` runs Python MCP servers such as `play-store-mcp`.
+
+```sh
+curl -LsSf https://astral.sh/uv/install.sh | sh
+```
 
 ## AI Stack Install (Work in progress)
 

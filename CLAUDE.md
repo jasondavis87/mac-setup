@@ -10,9 +10,11 @@ Treat `README.md` as the source of truth for the install order and step-by-step 
 
 ## Package manifest
 
-`Brewfile` is the single source of truth for installs. On a fresh macOS install, `brew bundle --file=Brewfile` provisions every formula, cask, Mac App Store app, and VS Code extension at once. The older `brew-formulae.txt` / `brew-casks.txt` lists were deleted (they had drifted from the Brewfile and were a constant source of "which list do I add this to?" confusion).
+`Brewfile` is the single source of truth for installs. On a fresh macOS install, `brew bundle --file=Brewfile` provisions every tap, formula, cask, and Mac App Store app at once. Third-party taps carry `trusted: true` because current Homebrew refuses to load untrusted taps; keep that on any new tap. The older `brew-formulae.txt` / `brew-casks.txt` lists were deleted (they had drifted from the Brewfile and were a constant source of "which list do I add this to?" confusion).
 
-When adding a package, edit `Brewfile` directly. To regenerate from current install state: `brew bundle dump --force --describe --file=Brewfile` — note this rewrites the whole file alphabetically and replaces any hand-written comments with auto-generated descriptions, so prefer surgical edits over dump when preserving structure matters.
+When adding a package, edit `Brewfile` directly. To compare against current install state, dump to a temp file and diff: `brew bundle dump --force --file=/tmp/Brewfile.now` (`--describe` is disabled in current Homebrew). Never dump over `Brewfile` itself: it rewrites the file and drops the hand-written comments. `brew bundle cleanup --file=Brewfile` (no `--force`) is a dry run listing installed items the Brewfile doesn't cover; most of those are build-tool leaves that are deliberately left out.
+
+There are no `vscode` entries on purpose. VS Code has no extensions installed, and `brew bundle` would send `vscode` entries to `code` before `cursor`. Cursor extensions are listed in the README's "Cursor extensions" section instead.
 
 The ollama formula is deliberately **commented out** (June 2026): the Apple Silicon bottle is missing the `llama-server` runner, so models can't load. Ollama is installed from the official release tarball instead (see below). A `brew bundle dump` would silently drop that comment block — preserve it, and don't re-add `brew "ollama"` until [homebrew-core#285917](https://github.com/Homebrew/homebrew-core/issues/285917) is fixed.
 
@@ -28,7 +30,7 @@ Neither service publishes ports by default; access is via OrbStack's domain prox
 
 `watchtower` auto-updates only `open-webui` and `searxng` (named in its `command:`), every 300s.
 
-The `config/open-webui/` bind mount holds runtime state (sqlite DB, vector DB, uploads, cache) and is **gitignored** — do not commit anything under it. `config/searxng/settings.yml` *is* committed; treat `settings.yml.new` as a scratch/staging file from a prior upgrade.
+The `config/open-webui/` bind mount holds runtime state (sqlite DB, vector DB, uploads, cache) and is **gitignored** — do not commit anything under it. `config/searxng/settings.yml` *is* committed.
 
 ## Ollama install (launchd, not brew services)
 
@@ -38,7 +40,11 @@ A gotcha worth remembering: a *running* Ollama server survives `brew upgrade`, s
 
 ## Node toolchain
 
-The README installs **two** Node versions via nvm (24 as default, plus 22) and installs `yarn`, `pnpm`, and `expo-cli` globally into each. If asked to "add a global npm tool", add it under both versions unless told otherwise.
+The README installs a single Node version (24) via nvm, plus npm globals (`yarn`, `pnpm`, `turbo`, `task-master-ai`, `@expo/ngrok`). `expo-cli` is deprecated and intentionally gone. Bun globals (`eas-cli`, `wrangler`, `clerk`, etc.) are listed in the README's Bun section.
+
+## Public repo
+
+This repo is public. Never commit secrets, tokens, env var values, key IDs, LAN addresses/hostnames, SSH host aliases, or personal/client project names. Key file locations in generic form (e.g. `~/.apple-search-ads/<key>.p8`) are fine.
 
 ## Things not to do
 
