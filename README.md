@@ -470,7 +470,6 @@ export PATH="/opt/homebrew/opt/ffmpeg-full/bin:$PATH"
 ### .zprofile
 ```sh
 source ~/.orbstack/shell/init.zsh 2>/dev/null || :   # added by OrbStack
-#fortune | cowsay -f tux
 ```
 
 ### .zshenv

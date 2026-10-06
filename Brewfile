@@ -6,23 +6,18 @@ tap "minio/stable", trusted: true
 tap "mobile-dev-inc/tap"
 tap "oven-sh/bun", trusted: true
 tap "tamtom/tap", trusted: true
-tap "twilio/brew", trusted: true
 
 # === Formulae ===
 brew "asitop"
-brew "boost"
-brew "ca-certificates"
 brew "cloudflared"
 brew "cmake"
 brew "cocoapods"
-brew "cowsay"
 brew "curl"
 brew "deno"
 brew "fastlane"
 # ffmpeg-full is keg-only (more codecs than plain `ffmpeg`). Linked here, and
 # its bin dir is also prepended to PATH in ~/.zshrc (see README "Shell").
 brew "ffmpeg-full", link: true
-brew "fortune"
 brew "gh"
 brew "git"
 brew "git-filter-repo"
@@ -32,11 +27,9 @@ brew "imagemagick"
 brew "imessage-exporter"
 brew "ios-deploy"
 brew "iperf3"
-brew "jenv"
 brew "libimobiledevice"
 brew "libpq", link: true
 brew "mas"
-brew "mingw-w64"
 brew "mint"
 # ollama: formula DISABLED June 2026 — the Apple Silicon bottle for 0.30.x is
 # missing the llama-server runner, so the server starts but every model fails
@@ -56,14 +49,10 @@ brew "rclone"
 brew "rsync"
 # Rust toolchains come from rustup (`rustup default stable`), not the `rust` formula.
 brew "rustup"
-brew "sentry-cli"
-brew "sound-touch"
 brew "stripe-cli"
 brew "supabase"
 # Not needed: Tailscale.app (cask below) installs its own CLI to /usr/local/bin.
 # brew "tailscale"
-brew "tcptraceroute"
-brew "vcprompt"
 brew "wakeonlan"
 brew "watchman"
 brew "wget"
@@ -72,7 +61,6 @@ brew "minio/stable/mc"
 brew "mobile-dev-inc/tap/maestro", trusted: true
 brew "oven-sh/bun/bun"
 brew "tamtom/tap/gplay"
-brew "twilio/brew/twilio"
 
 # === Casks ===
 cask "android-file-transfer"
