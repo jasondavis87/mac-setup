@@ -40,7 +40,7 @@ A gotcha worth remembering: a *running* Ollama server survives `brew upgrade`, s
 
 ## Node toolchain
 
-The README installs a single Node version (24) via nvm, plus npm globals (`yarn`, `pnpm`, `turbo`, `task-master-ai`, `@expo/ngrok`). `expo-cli` is deprecated and intentionally gone. Bun globals (`eas-cli`, `wrangler`, `clerk`, etc.) are listed in the README's Bun section.
+Node comes from Homebrew (`brew "node"`, currently Node 26), no nvm. npm globals: `yarn`, `turbo`, `task-master-ai`, `@expo/ngrok` (`pnpm` is a brew formula). `expo-cli` is deprecated and intentionally gone. Bun globals (`eas-cli`, `wrangler`, `clerk`, etc.) are listed in the README's Bun section.
 
 ## Public repo
 

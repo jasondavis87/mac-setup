@@ -85,7 +85,7 @@ xcode-select --install
 
 ### Terminal
 
-Currently using cmux (built on Ghostty's lib, but i like it better). Ghostty is installed too as a fallback. Tried Warp and iTerm in the past. iTerm i've retired completely. Warp I liked the AI features, but i rarely used them.
+Currently using cmux (built on Ghostty's lib, but i like it better). Tried Ghostty, Warp and iTerm in the past. iTerm i've retired completely. Warp I liked the AI features, but i rarely used them.
 
 Installed via the `Brewfile` step below, no extra command needed.
 
@@ -376,21 +376,17 @@ Do this from Hetzner.com or the coolify services running on the servers.
 
 ## Node.js w/ yarn/pnpm
 
-Install Node Version Manager, Node 24 (the only version installed), and the npm globals.
+Node comes from Homebrew (`brew "node"` in the `Brewfile`), no version manager. The machine gets rebuilt every year anyway, and one Node major per year is plenty, so this setup tracks Node 26 for the year.
 
-Repo Link: [GitHub](https://github.com/nvm-sh/nvm)
-
-```sh
-curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.3/install.sh | bash
-```
+Global CLIs:
 
 ```sh
-nvm install --default 24
-nvm use 24
-npm install -g yarn pnpm turbo task-master-ai @expo/ngrok
+npm install -g yarn turbo task-master-ai @expo/ngrok
 ```
 
-`corepack` and `npm` ship with Node 24. `expo-cli` is deprecated; use `npx expo` per project (and `eas-cli` from Bun below).
+`pnpm` comes from the `Brewfile`. `expo-cli` is deprecated; use `npx expo` per project (and `eas-cli` from Bun below).
+
+Homebrew's `node` formula follows the newest Node release, so the daily brew auto-upgrade will jump to the next major when it ships. To hold the current major, run `brew pin node`. A pin also blocks that major's patch releases, so run `brew unpin node && brew upgrade node && brew pin node` now and then. Or switch to the versioned formula once it exists, e.g. `node@26`, which is keg-only and needs its `bin` on `PATH`.
 
 
 ## Additional Applications
@@ -405,11 +401,10 @@ open /System/Applications/App\ Store.app
 ```
 Then
 ```sh
-mas install 634148309 1088667674 899247664 497799835
+mas install 634148309 899247664 497799835
 ```
 This Installs:
 - Logic Pro
-- Loops By CDub
 - TestFlight
 - Xcode
 
@@ -423,7 +418,6 @@ Xcode betas come from [developer.apple.com/download](https://developer.apple.com
 - Komplete 11
 - Microsoft Office (cask `microsoft-office`, commented out in `Brewfile`)
 - Ableton Live 12 Suite (cask `ableton-live-suite`, commented out in `Brewfile`; register it)
-- Wispr Flow and FluidVoice (dictation; casks `wispr-flow` / `fluidvoice`, commented out in `Brewfile`)
 - iStatMenu
 - Register iStat Menu (save on dropbox)
 
@@ -432,7 +426,7 @@ Xcode betas come from [developer.apple.com/download](https://developer.apple.com
 
 Theme is the stock `robbyrussell`; plugins are `git node vscode`. Keep the oh-my-zsh installer's template and add the blocks below. Three files, each with one job:
 
-- `~/.zprofile`: login-shell setup (nvm, OrbStack).
+- `~/.zprofile`: login-shell setup (OrbStack).
 - `~/.zshrc`: interactive shell (oh-my-zsh, toolchain PATHs, aliases).
 - `~/.zshenv`: sourced by every zsh, including non-interactive ones. Cargo env plus any personal tokens or env vars live here, kept out of this repo.
 
@@ -447,11 +441,6 @@ export ZSH="$HOME/.oh-my-zsh"
 ZSH_THEME="robbyrussell"
 plugins=(git node vscode)
 source $ZSH/oh-my-zsh.sh
-
-# nvm
-export NVM_DIR="$HOME/.nvm"
-[ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
-[ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"
 
 # bun
 [ -s "$HOME/.bun/_bun" ] && source "$HOME/.bun/_bun"
@@ -480,7 +469,6 @@ export PATH="/opt/homebrew/opt/ffmpeg-full/bin:$PATH"
 
 ### .zprofile
 ```sh
-source ~/.nvm/nvm.sh
 source ~/.orbstack/shell/init.zsh 2>/dev/null || :   # added by OrbStack
 #fortune | cowsay -f tux
 ```

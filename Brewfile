@@ -44,6 +44,7 @@ brew "mint"
 # Installed from the official release tarball instead — see "AI Stack Install
 # > 1. Ollama" in README.md. Once the formula is fixed, restore this line:
 # brew "ollama", restart_service: :changed, link: false
+brew "node" # Node 26; the README explains holding a major with `brew pin node`
 brew "openjdk@17"
 brew "oxipng"
 brew "pandoc"
@@ -94,8 +95,8 @@ cask "displaylink"
 cask "dropbox"
 cask "excalidrawz"
 cask "figma"
+cask "fluidvoice"
 cask "font-hack-nerd-font"
-cask "ghostty"
 cask "google-chrome"
 cask "hamed-elfayome/claude-usage/claude-usage-tracker"
 cask "hiddenbar"
@@ -109,7 +110,6 @@ cask "ngrok"
 cask "obs"
 cask "onyx"
 cask "orbstack"
-cask "pingplotter"
 cask "raycast"
 cask "rectangle"
 cask "screen-studio"
@@ -129,13 +129,10 @@ cask "zoom"
 # Installed manually on the current machine. Casks exist; uncomment to let
 # brew manage them (licensed apps still need to be registered after install).
 # cask "ableton-live-suite"
-# cask "fluidvoice"
 # cask "microsoft-office"
-# cask "wispr-flow"
 
 # === Mac App Store ===
 mas "Logic Pro", id: 634148309
-mas "Loops By CDub", id: 1088667674
 mas "TestFlight", id: 899247664
 mas "Xcode", id: 497799835
 
