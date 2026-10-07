@@ -428,7 +428,7 @@ Theme is the stock `robbyrussell`; plugins are `git node vscode`. Keep the oh-my
 
 - `~/.zprofile`: login-shell setup (OrbStack).
 - `~/.zshrc`: interactive shell (oh-my-zsh, toolchain PATHs, aliases).
-- `~/.zshenv`: sourced by every zsh, including non-interactive ones. Cargo env plus any personal tokens or env vars live here, kept out of this repo.
+- `~/.zshenv`: sourced by every zsh, including non-interactive ones. Homebrew rustup and Cargo PATHs belong here. Keep personal tokens and env vars out of this repo.
 
 Homebrew's installer adds `/opt/homebrew/bin` via `/etc/paths.d/homebrew`. If `brew` isn't found in a new shell, add `eval "$(/opt/homebrew/bin/brew shellenv)"` to the top of `~/.zprofile`.
 
@@ -474,7 +474,12 @@ source ~/.orbstack/shell/init.zsh 2>/dev/null || :   # added by OrbStack
 
 ### .zshenv
 ```sh
-. "$HOME/.cargo/env"   # rustup / cargo PATH
+# Homebrew rustup is keg-only; ~/.cargo/bin holds cargo-installed CLIs.
+if [[ -d /opt/homebrew/opt/rustup/bin ]]; then
+  export PATH="/opt/homebrew/opt/rustup/bin:$HOME/.cargo/bin:$PATH"
+else
+  export PATH="/usr/local/opt/rustup/bin:$HOME/.cargo/bin:$PATH"
+fi
 # export any personal tokens and env vars here (kept out of this repo)
 ```
 
@@ -498,7 +503,7 @@ rustup default stable
 cargo install tauri-cli
 ```
 
-If `~/.cargo/env` doesn't exist afterwards, use `export PATH="$HOME/.cargo/bin:$PATH"` in `~/.zshenv` instead.
+Homebrew's `rustup` is keg-only. Use the `.zshenv` PATH block above for Apple Silicon or Intel instead of relying on `~/.cargo/env`, then open a new shell before running the commands. `~/.cargo/bin` makes cargo-installed CLIs such as `cargo-tauri` available.
 
 Python: [uv](https://docs.astral.sh/uv/) via its standalone installer (creates `~/.local/bin/env`, sourced in `.zshrc`). `uvx` runs Python MCP servers such as `play-store-mcp`.
 
