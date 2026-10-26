@@ -176,7 +176,7 @@ cat > ~/Library/LaunchAgents/com.user.brew-auto-update.plist <<'XML'
     <array>
       <string>/bin/zsh</string>
       <string>-lc</string>
-      <string>/opt/homebrew/bin/brew update --quiet &amp;&amp; /opt/homebrew/bin/brew upgrade --greedy --quiet &amp;&amp; /opt/homebrew/bin/brew cleanup --prune=7 --quiet</string>
+      <string>/opt/homebrew/bin/brew update --quiet &amp;&amp; /opt/homebrew/bin/brew upgrade --quiet; casks=$(/opt/homebrew/bin/brew outdated --cask --greedy --quiet | grep -vx tailscale-app); [[ -z $casks ]] || /opt/homebrew/bin/brew upgrade --cask --greedy --quiet ${(f)casks}; /opt/homebrew/bin/brew cleanup --prune=7 --quiet</string>
     </array>
 
     <key>StartCalendarInterval</key>
@@ -205,6 +205,8 @@ plutil -lint ~/Library/LaunchAgents/com.user.brew-auto-update.plist   # must pri
 The `&&` has to be written as `&amp;&amp;` inside the plist XML, otherwise the file is invalid and launchd refuses to load it.
 
 Caveat: `--greedy` also upgrades self-updating casks. Casks that install a `.pkg` or otherwise need `sudo` (DisplayLink, the Canon driver, BlackHole, etc.) can't prompt for a password from launchd, so their upgrades fail unattended. Check `/tmp/brew-auto-update.err` now and then and run `brew upgrade --greedy` by hand for those.
+
+`tailscale-app` is filtered out of the greedy cask list on purpose. It's one of those `.pkg` casks, and brew quits the app before failing on `sudo`, which left Tailscale closed every night. Tailscale updates itself, so brew's recorded version lagging behind is harmless (sync it by hand with `brew upgrade --cask tailscale-app` if you care).
 
 ### 2. Load it
 
